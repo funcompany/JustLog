@@ -123,32 +123,32 @@ extension Logger: Logging {
     public func verbose(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        log(.verbose, message, error: error, userInfo: updatedUserInfo, file, function, line)
+        log(.verbose, message, error: error, userInfo: nil, file, function, line)
     }
     
     public func debug(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        log(.debug, message, error: error, userInfo: updatedUserInfo, file, function, line)
+        log(.debug, message, error: error, userInfo: nil, file, function, line)
     }
     
     public func info(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        log(.info, message, error: error, userInfo: updatedUserInfo, file, function, line)
+        log(.info, message, error: error, userInfo: nil, file, function, line)
     }
     
     public func warning(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        log(.warning, message, error: error, userInfo: updatedUserInfo, file, function, line)
+        log(.warning, message, error: error, userInfo: nil, file, function, line)
 
     }
     
     public func error(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        log(.error, message, error: error, userInfo: updatedUserInfo, file, function, line)
+        log(.error, message, error: error, userInfo: nil, file, function, line)
     }
     
     internal func log(_ type: LogType, _ message: String, error: NSError?, userInfo: [String : Any]?, _ file: String, _ function: String, _ line: UInt) {

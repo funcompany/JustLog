@@ -63,8 +63,9 @@ public class LogstashDestination: BaseDestination  {
             levelName = "error"
         }
         if let dict = msg.toDictionary() {
+            dict[levelKey] = levelName
             if let logzioToken = logzioToken {
-                dict = dict.merged(with: [logzioTokenKey: logzioToken, levelKey: level])
+                dict[logzioTokenKey] = logzioToken
             }
             addLog(dict)
         }

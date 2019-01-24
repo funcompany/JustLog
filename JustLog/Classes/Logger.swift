@@ -178,15 +178,19 @@ extension Logger {
     
         let messageConst = "message"
         let userInfoConst = "dynamic"
-        let metadataConst = "skData.b4cClient.metadata"
-        let errorsConst = "skData.b4cClient.errors"
+        let metadataConst = "metadata"
+        let errorsConst = "errors"
         let timeConst = "@timestamp"
         
         var options = defaultUserInfo ?? [String : Any]()
         
         var retVal = [String : Any]()
+        var skData = [String: Any]()
+        retVal["skData"] = skData
+        var b4cClient = [String: Any]()
+        skData["b4cClient"] = b4cClient
         retVal[messageConst] = message
-        retVal[metadataConst] = metadataDictionary(file, function, line)
+        b4cClient[metadataConst] = metadataDictionary(file, function, line)
         retVal[timeConst] = Int64(Date().timeIntervalSince1970 * 1000)
 
         if let userInfo = userInfo {
@@ -198,7 +202,7 @@ extension Logger {
 
         
         if let error = error {
-            retVal[errorsConst] = error.disassociatedErrorChain().map( { return jsonify(object: $0) } )
+            b4cClient[errorsConst] = error.disassociatedErrorChain().map( { return jsonify(object: $0) } )
         }
         
         do {

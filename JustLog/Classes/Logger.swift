@@ -177,22 +177,14 @@ extension Logger {
         let errorsConst = "errors"
         let timeConst = "@timestamp"
         
-        var options = defaultUserInfo ?? [String : Any]()
+        var retVal = defaultUserInfo ?? [String : Any]()
         
-        var retVal = [String : Any]()
         var skData = [String: Any]()
         var b4cClient = [String: Any]()
         retVal[messageConst] = message
         b4cClient[metadataConst] = metadataDictionary(file, function, line)
         retVal[timeConst] = Int64(Date().timeIntervalSince1970 * 1000)
-
-        if let userInfo = userInfo {
-            for (key, value) in userInfo {
-                _ = options.updateValue(value, forKey: key)
-            }
-            retVal[userInfoConst] = options
-        }
-
+        retVal[userInfoConst] = userInfo
 
         if let error = error {
             b4cClient[errorsConst] = error.disassociatedErrorChain().map( { return jsonify(object: $0) } )
@@ -203,7 +195,25 @@ extension Logger {
         do {
             return try JSONSerialization.data(withJSONObject: jsonify(object: retVal)).stringRepresentation()
         } catch {
-            return "{\"error\":\"\(error.localizedDescription)\"}"
+            let error = error as NSError
+            return """
+                    {
+                        "skData": {
+                            "b4cClient": {
+                                "\(errorsConst)": [
+                                    {
+                                        "domain": \(error.domain),
+                                        "code": \(error.code),
+                                        "userInfo": {
+                                            "NSLocalizedDescriptionKey": "\(error.localizedDescription)"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                   """
+
         }
     }
     

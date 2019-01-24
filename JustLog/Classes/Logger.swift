@@ -33,10 +33,10 @@ public final class Logger: NSObject {
     public var errorDomain = "error_domain"
     public var errorCode = "error_code"
 
-    public let iSO8601Formatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
+    public let timestampFormatter: DateFormatter = {
+        let formatter = DateFormatter()
         formatter.timeZone = TimeZone.autoupdatingCurrent
-        formatter.formatOptions.formUnion(.withFractionalSeconds)
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         return formatter
     }()
 
@@ -195,7 +195,7 @@ extension Logger {
         var b4cClient = [String: Any]()
         retVal[messageConst] = message
         b4cClient[metadataConst] = metadataDictionary(file, function, line)
-        retVal[timeConst] = iSO8601Formatter.string(from: Date())
+        retVal[timeConst] = timestampFormatter.string(from: Date())
         retVal[userInfoConst] = userInfo
 
         if let error = error {

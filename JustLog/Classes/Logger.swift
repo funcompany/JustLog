@@ -186,9 +186,7 @@ extension Logger {
         
         var retVal = [String : Any]()
         var skData = [String: Any]()
-        retVal["skData"] = skData
         var b4cClient = [String: Any]()
-        skData["b4cClient"] = b4cClient
         retVal[messageConst] = message
         b4cClient[metadataConst] = metadataDictionary(file, function, line)
         retVal[timeConst] = Int64(Date().timeIntervalSince1970 * 1000)
@@ -200,11 +198,13 @@ extension Logger {
             retVal[userInfoConst] = options
         }
 
-        
+
         if let error = error {
             b4cClient[errorsConst] = error.disassociatedErrorChain().map( { return jsonify(object: $0) } )
         }
-        
+        skData["b4cClient"] = b4cClient
+        retVal["skData"] = skData
+
         do {
             return try JSONSerialization.data(withJSONObject: jsonify(object: retVal)).stringRepresentation()
         } catch {

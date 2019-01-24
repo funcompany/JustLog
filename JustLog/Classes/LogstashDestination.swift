@@ -49,18 +49,18 @@ public class LogstashDestination: BaseDestination  {
     override public func send(_ level: SwiftyBeaver.Level, msg: String, thread: String, file: String,
                               function: String, line: Int, context: Any? = nil) -> String? {
 
-        let level: String
-        switch SwiftyBeaver.Level {
+        let levelName: String
+        switch level {
         case .verbose:
-            level = "verbose"
+            levelName = "verbose"
         case .debug:
-            level = "debug"
+            levelName = "debug"
         case .info:
-            level = "info"
+            levelName = "info"
         case .warning:
-            level = "warning"
+            levelName = "warning"
         case .error:
-            level = "error"
+            levelName = "error"
         }
         if let dict = msg.toDictionary() {
             if let logzioToken = logzioToken {

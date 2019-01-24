@@ -62,7 +62,7 @@ public class LogstashDestination: BaseDestination  {
         case .error:
             levelName = "error"
         }
-        if let dict = msg.toDictionary() {
+        if var dict = msg.toDictionary() {
             dict[levelKey] = levelName
             if let logzioToken = logzioToken {
                 dict[logzioTokenKey] = logzioToken

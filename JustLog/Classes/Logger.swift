@@ -57,7 +57,7 @@ public final class Logger: NSObject {
     public var enableLogstashLogging: Bool = true
     public var baseUrlForFileLogging = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
     public let internalLogger = SwiftyBeaver.self
-    
+
     private var dispatchInterval: TimeInterval = 5.0
     private var dispatchTimer: Timer?
     
@@ -97,7 +97,7 @@ public final class Logger: NSObject {
             logstash = LogstashDestination(host: logstashHost, port: logstashPort, timeout: logstashTimeout, logActivity: logLogstashSocketActivity, allowUntrustedServer: allowUntrustedServer)
             logstash.logzioToken = logzioToken
             internalLogger.addDestination(logstash)
-            
+
             dispatchTimer = Timer.scheduledTimer(withTimeInterval: dispatchInterval, repeats: true) { [weak self] timer in
                 guard let self = self else { return }
                 self.forceSend()
@@ -123,28 +123,24 @@ extension Logger: Logging {
     public func verbose(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        let updatedUserInfo = [logTypeKey: "verbose"].merged(with: userInfo ?? [String : String]())
         log(.verbose, message, error: error, userInfo: updatedUserInfo, file, function, line)
     }
     
     public func debug(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        let updatedUserInfo = [logTypeKey: "debug"].merged(with: userInfo ?? [String : String]())
         log(.debug, message, error: error, userInfo: updatedUserInfo, file, function, line)
     }
     
     public func info(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        let updatedUserInfo = [logTypeKey: "info"].merged(with: userInfo ?? [String : String]())
         log(.info, message, error: error, userInfo: updatedUserInfo, file, function, line)
     }
     
     public func warning(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        let updatedUserInfo = [logTypeKey: "warning"].merged(with: userInfo ?? [String : String]())
         log(.warning, message, error: error, userInfo: updatedUserInfo, file, function, line)
 
     }
@@ -152,7 +148,6 @@ extension Logger: Logging {
     public func error(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: StaticString, _ function: StaticString, _ line: UInt) {
         let file = String(describing: file)
         let function = String(describing: function)
-        let updatedUserInfo = [logTypeKey: "error"].merged(with: userInfo ?? [String : Any]())
         log(.error, message, error: error, userInfo: updatedUserInfo, file, function, line)
     }
     
@@ -182,16 +177,18 @@ extension Logger {
     internal func logMessage(_ message: String, error: NSError?, userInfo: [String : Any]?, _ file: String, _ function: String, _ line: UInt) -> String {
     
         let messageConst = "message"
-        let userInfoConst = "user_info"
-        let metadataConst = "metadata"
-        let errorsConst = "errors"
+        let userInfoConst = "dynamic"
+        let metadataConst = "skData.b4cClient.metadata"
+        let errorsConst = "skData.b4cClient.errors"
+        let timeConst = "@timestamp"
         
         var options = defaultUserInfo ?? [String : Any]()
         
         var retVal = [String : Any]()
         retVal[messageConst] = message
         retVal[metadataConst] = metadataDictionary(file, function, line)
-        
+        retVal[timeConst] = Int64(Date().timeIntervalSince1970 * 1000)
+
         if let userInfo = userInfo {
             for (key, value) in userInfo {
                 _ = options.updateValue(value, forKey: key)
@@ -201,11 +198,14 @@ extension Logger {
 
         
         if let error = error {
-            retVal[errorsConst] = error.disassociatedErrorChain().map { return errorDictionary(for: $0) }
+            retVal[errorsConst] = error.disassociatedErrorChain().map( { return jsonify(object: $0) } )
         }
         
-        
-        return retVal.toJSON() ?? ""
+        do {
+            return try JSONSerialization.data(withJSONObject: jsonify(object: retVal)).stringRepresentation()
+        } catch {
+            return "{\"error\":\"\(error.localizedDescription)\"}"
+        }
     }
     
     private func metadataDictionary(_ file: String, _ function: String, _ line: UInt) -> [String: Any] {
@@ -236,4 +236,36 @@ extension Logger {
         errorInfo[userInfoConst] = errorUserInfo
         return errorInfo
     }
+}
+
+fileprivate func jsonify(object: Any?) -> Any {
+    guard let object = object else {
+        return NSNull()
+    }
+    if JSONSerialization.isValidJSONObject(object) {
+        return object
+    }
+    if let dict = object as? [AnyHashable: Any] {
+        var newDict = [String: Any]()
+        for (key, value) in dict {
+            newDict[String(describing: key)] = jsonify(object: value)
+        }
+        return newDict
+    }
+    if let sequence = object as? AnySequence<Any> {
+        var array = [Any]()
+        for value in sequence {
+            array.append(jsonify(object: value))
+        }
+        return array
+    }
+    if let error = object as? NSError {
+        var errDict = [String: Any]()
+        errDict["domain"] = error.domain
+        errDict["code"] = error.code
+        errDict["userInfo"] = jsonify(object: error.userInfo)
+        return errDict
+    }
+    // Ultimate fallback - string representation. May not be accurate but never fails.
+    return String(describing: object)
 }

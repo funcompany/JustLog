@@ -17,6 +17,7 @@ public class LogstashDestination: BaseDestination  {
     var logsToShip = [Int : [String : Any]]()
     fileprivate var completionHandler: ((_ error: Error?) -> Void)?
     private let logzioTokenKey = "token"
+    private let levelKey = "level"
     
     var logActivity: Bool = false
     let logDispatchQueue = OperationQueue()
@@ -47,13 +48,25 @@ public class LogstashDestination: BaseDestination  {
 
     override public func send(_ level: SwiftyBeaver.Level, msg: String, thread: String, file: String,
                               function: String, line: Int, context: Any? = nil) -> String? {
-        
+
+        let level: String
+        switch SwiftyBeaver.Level {
+        case .verbose:
+            level = "verbose"
+        case .debug:
+            level = "debug"
+        case .info:
+            level = "info"
+        case .warning:
+            level = "warning"
+        case .error:
+            level = "error"
+        }
         if let dict = msg.toDictionary() {
-            var flattened = dict.flattened()
             if let logzioToken = logzioToken {
-                flattened = flattened.merged(with: [logzioTokenKey: logzioToken])
+                dict = dict.merged(with: [logzioTokenKey: logzioToken, levelKey: level])
             }
-            addLog(flattened)
+            addLog(dict)
         }
         
         return nil
